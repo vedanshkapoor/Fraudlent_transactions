@@ -1,34 +1,85 @@
-# Fraudlent_transactions
-This is an machine learning project which predicts the probability of fraudlent transactions on an industrial scale
+# 🚨 Fraudulent Transactions Detection using Machine Learning
 
+This project focuses on detecting **fraudulent financial transactions** using machine learning techniques. It leverages a realistic, time-based transactional dataset simulating industrial-scale money movement. The aim is to predict the **probability of fraud** for any given transaction while addressing class imbalance, model performance, and interpretability.
 
-Data Dictionary -
-step - maps a unit of time in the real world. In this case 1 step is 1 hour of time. Total steps 744 (30 days simulation).
+---
 
-type - CASH-IN, CASH-OUT, DEBIT, PAYMENT and TRANSFER.
+## 📊 Dataset Description
 
-amount - amount of the transaction in local currency.
+The dataset simulates 30 days of financial activity with transaction types such as transfers, payments, and cash-outs. Below is a summary of the dataset fields:
 
-nameOrig - customer who started the transaction
+| Column Name        | Description                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------|
+| `step`             | Time step (1 step = 1 hour) — total of 744 steps (30 days)                                           |
+| `type`             | Type of transaction: `CASH-IN`, `CASH-OUT`, `DEBIT`, `PAYMENT`, `TRANSFER`                         |
+| `amount`           | Transaction amount in local currency                                                                |
+| `nameOrig`         | Originator of the transaction                                                                        |
+| `oldbalanceOrg`    | Initial balance of originator before transaction                                                    |
+| `newbalanceOrig`   | New balance of originator after transaction                                                         |
+| `nameDest`         | Recipient of the transaction                                                                         |
+| `oldbalanceDest`   | Initial balance of recipient before transaction                                                     |
+| `newbalanceDest`   | New balance of recipient after transaction                                                          |
+| `isFraud`          | `1` if transaction is fraudulent, else `0`                                                           |
+| `isFlaggedFraud`   | `1` if flagged due to suspicious activity (e.g. > 200,000 in a single transfer), else `0`            |
 
-oldbalanceOrg - initial balance before the transaction
+---
 
-newbalanceOrig - new balance after the transaction
+## 🧠 Model Objective
 
-nameDest - customer who is the recipient of the transaction
+To accurately classify **fraudulent transactions** in a highly **imbalanced dataset**, where only ~0.1% of transactions are fraudulent.
 
-oldbalanceDest - initial balance recipient before the transaction. Note that there is not information for customers that start with M (Merchants).
+---
 
-newbalanceDest - new balance recipient after the transaction. Note that there is not information for customers that start with M (Merchants).
+## 📐 Evaluation Metric: Precision-Recall AUC (AUPRC)
 
-isFraud - This is the transactions made by the fraudulent agents inside the simulation. In this specific dataset the fraudulent behavior of the agents aims to profit by taking control or customers accounts and try to empty the funds by transferring to another account and then cashing out of the system.
+Due to the extreme class imbalance, we chose the **Area Under the Precision-Recall Curve (AUPRC)** over traditional ROC-AUC:
 
-isFlaggedFraud - The business model aims to control massive transfers from one account to another and flags illegal attempts. An illegal attempt in this dataset is an attempt to transfer more than 200.000 in a single transaction.
+| Metric    | Reason                                                                 |
+|-----------|------------------------------------------------------------------------|
+| `AUPRC`   | Focuses on performance of the minority (fraudulent) class              |
+| `ROC-AUC` | Misleading with imbalanced classes — can report high scores unjustly   |
 
+**Why AUPRC?**  
+A high AUPRC score indicates strong ability to detect fraud without being biased by the overwhelming number of normal transactions.
 
-Selection of metric :
-Given the highly skewed data, I use the area under the precision-recall curve (AUPRC) instead of the traditional area under the receiver operating characteristic (AUROC). AUPRC is particularly useful for datasets with 99% negative and 1% positive examples, as it emphasizes the model's performance on the minority class. A high AUPRC indicates that the model effectively handles the positive examples, whereas a low AUPRC suggests poor performance on these examples.
+---
 
+## 🧪 Approach & Techniques
 
-ML algorithm-
-A common initial approach to address imbalanced data is to balance it by discarding a portion of the majority class before applying a machine learning algorithm. However, the downside of undersampling is that the resulting model may not perform well on real-world skewed test data since much of the information is discarded. A more effective strategy could be to oversample the minority class, using techniques such as the Synthetic Minority Over-sampling Technique (SMOTE) available in the 'imblearn' library. Inspired by this, I experimented with various anomaly detection and supervised learning approaches. Ultimately, I found that the best results were achieved on the original dataset using machine learning algorithms based on ensembles of decision trees, which inherently perform well on imbalanced data. These algorithms not only handle missing values effectively but also benefit from parallel processing for increased speed. Among these, the extreme gradient-boosted (XGBoost) algorithm stood out. Additionally, XGBoost, like several other machine learning algorithms, allows for adjusting the weighting of the positive class relative to the negative class, which helps address the dataset's skew.
+### 🔍 Data Imbalance Handling
+
+- Tried both **undersampling** and **SMOTE-based oversampling**
+- Final model trained on **original skewed data** with **class-weighting**
+
+### ⚙️ Model Selection
+
+| Method                | Result                                                              |
+|------------------------|----------------------------------------------------------------------|
+| Logistic Regression    | Poor performance on skewed data                                      |
+| SMOTE + Random Forest  | Improved recall, but overfit in some cases                           |
+| **XGBoost (Best)**     | Excellent performance; handles skew, missing values, and large data  |
+
+> ✅ **XGBoost** with class weighting and tree ensembles gave the most consistent performance.
+
+---
+
+## 📈 Results
+
+| Metric        | Value      | Interpretation                                                                 |
+|---------------|------------|---------------------------------------------------------------------------------|
+| AUPRC         | **0.98**   | Indicates excellent performance on the minority (fraudulent) class              |
+| Precision     | High       | Very few false positives (incorrect fraud alerts)                              |
+| Recall        | High       | Successfully detects most actual fraudulent transactions                      |
+
+---
+
+## 🛡️ Conclusion & Infrastructure Recommendations
+
+### ✅ **Conclusion**
+- The model performs exceptionally well in detecting fraud, achieving an **AUPRC score of 0.9785**.
+- This confirms its strong ability to correctly identify fraudulent activity while minimizing false alarms.
+
+### 🔐 **Fraud Prevention Recommendations**
+- Pay special attention to **`TRANSFER`** and **`CASH_OUT`** transaction types — these are highly associated with fraud.
+- Continuously monitor transaction patterns to detect unusual behavior.
+- Use automated model retraining and performance monitoring to a
